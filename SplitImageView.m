@@ -1,8 +1,6 @@
 
 #import "SplitImageView.h"
 
-static inline CGFloat CGFloatClamp(CGFloat minimum, CGFloat maximum, CGFloat value) { return MIN(MAX(value, minimum), maximum); }
-
 @interface UIImage(Pattern)
 + (UIImage *)checkerboard;
 @end
@@ -22,9 +20,11 @@ static inline CGFloat CGFloatClamp(CGFloat minimum, CGFloat maximum, CGFloat val
 @property (nonatomic) UIView *thumbView;
 @end
 
+static inline CGFloat CGFloatClamp(CGFloat minimum, CGFloat maximum, CGFloat value) { return MIN(MAX(value, minimum), maximum); }
+
 @implementation SplitImageView
 
-static const CGSize kSplitterThumbSize = { 10.f, 44.f};
+static const CGSize kSplitterThumbSize = { 10.f, 44.f };
 
 - (instancetype)init; { if (!(self = [super init])) { return nil; } return [self commonInit]; }
 - (instancetype)initWithCoder:(NSCoder *)aDecoder; { if (!(self = [super initWithCoder:aDecoder])) { return nil; } return [self commonInit]; }
