@@ -1,25 +1,14 @@
 
 #import "SplitImageView.h"
 
-@implementation UIImage(Pattern)
+static inline CGFloat CGFloatClamp(CGFloat minimum, CGFloat maximum, CGFloat value) { return MIN(MAX(value, minimum), maximum); }
 
+@interface UIImage(Pattern)
 + (UIImage *)checkerboard;
-{
-    UIGraphicsBeginImageContextWithOptions(CGSizeMake(8, 8), YES, 0);
-    [UIColor.whiteColor setFill];
-    UIRectFill(CGRectMake(0, 0, 8, 8));
-    [[UIColor colorWithWhite:0.75 alpha:1] setFill];
-    UIRectFill(CGRectMake(0, 0, 4, 4));
-    UIRectFill(CGRectMake(4, 4, 4, 4));
-    UIImage *image = UIGraphicsGetImageFromCurrentImageContext();
-    UIGraphicsEndImageContext();
-    return image;
-}
-
 @end
 
-@implementation UIColor(Pattern)
-+ (UIColor *)transparencyPattern; { return [UIColor colorWithPatternImage:UIImage.checkerboard]; }
+@interface UIColor(Pattern)
++ (UIColor *)transparencyPattern;
 @end
 
 @interface SplitImageView ()
@@ -34,6 +23,8 @@
 @end
 
 @implementation SplitImageView
+
+static const CGSize kSplitterThumbSize = { 10.f, 44.f};
 
 - (instancetype)init; { if (!(self = [super init])) { return nil; } return [self commonInit]; }
 - (instancetype)initWithCoder:(NSCoder *)aDecoder; { if (!(self = [super initWithCoder:aDecoder])) { return nil; } return [self commonInit]; }
@@ -77,10 +68,19 @@
     return self;
 }
 
+- (void)touchesBegan:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event;
+{
+    [self touchesMoved:touches withEvent:event];
+}
+
 - (void)touchesMoved:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event;
 {
-    CGFloat xPosition = [touches.anyObject locationInView:self].x;
-    [self setImageSplit: (xPosition < 0) ? 0 : (xPosition > self.bounds.size.width) ? self.bounds.size.width : xPosition];
+    self.imageSplit = CGFloatClamp(0.f, self.bounds.size.width, [touches.anyObject locationInView:self].x);
+}
+
+- (void)touchesEnded:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event;
+{
+    [self touchesMoved:touches withEvent:event];
 }
 
 - (void)layoutSubviews;
@@ -88,9 +88,9 @@
     self.leftImageView.frame = self.leftMaskLayer.frame = self.rightImageView.frame = self.rightMaskLayer.frame = self.bounds;
     
     self.splitterView.frame = CGRectMake(0, -2, 2, self.bounds.size.height + 4);
-    self.thumbView.frame = CGRectMake(0, 0, 10, 44);
+    self.thumbView.frame = CGRectMake(0, 0, kSplitterThumbSize.width, kSplitterThumbSize.height);
     
-    [self setImageSplit:CGRectGetMidX(self.bounds)];
+    self.imageSplit = CGRectGetMidX(self.bounds);
 }
 
 - (void)setImageSplit:(CGFloat)xPosition;
@@ -103,12 +103,36 @@
 }
 
 - (void)setContentMode:(UIViewContentMode)contentMode; { self.leftImageView.contentMode = self.rightImageView.contentMode = super.contentMode = contentMode; }
+
 - (UIImage *)leftImage; { return self.leftImageView.image; }
 - (void)setLeftImage:(UIImage *)leftImage; { self.leftImageView.image = leftImage; }
-- (void)setLeftImageName:(NSString *)leftImageName; { self.leftImageView.image = [UIImage imageNamed:leftImageName]; }
-- (void)setRightImage:(UIImage *)rightImage; { self.rightImageView.image = rightImage; }
-- (void)setRightImageName:(NSString *)rightImageName; { self.rightImageView.image = [UIImage imageNamed:rightImageName]; }
+- (void)setLeftImageName:(NSString *)leftImageName; { self.leftImage = [UIImage imageNamed:leftImageName]; }
+
 - (UIImage *)rightImage; { return self.rightImageView.image; }
+- (void)setRightImage:(UIImage *)rightImage; { self.rightImageView.image = rightImage; }
+- (void)setRightImageName:(NSString *)rightImageName; { self.rightImage = [UIImage imageNamed:rightImageName]; }
 
 @end
 
+@implementation UIImage(Pattern)
+
+static const CGFloat kCheckerboardGridSize = 4.f;
+
++ (UIImage *)checkerboard;
+{
+    UIGraphicsBeginImageContextWithOptions(CGSizeMake(kCheckerboardGridSize * 2.f, kCheckerboardGridSize * 2.f), YES, 0);
+    [UIColor.whiteColor setFill];
+    UIRectFill(CGRectMake(0, 0, kCheckerboardGridSize * 2.f, kCheckerboardGridSize * 2.f));
+    [[UIColor colorWithWhite:0.75 alpha:1] setFill];
+    UIRectFill(CGRectMake(0, 0, kCheckerboardGridSize, kCheckerboardGridSize));
+    UIRectFill(CGRectMake(kCheckerboardGridSize, kCheckerboardGridSize, kCheckerboardGridSize, kCheckerboardGridSize));
+    UIImage *image = UIGraphicsGetImageFromCurrentImageContext();
+    UIGraphicsEndImageContext();
+    return image;
+}
+
+@end
+
+@implementation UIColor(Pattern)
++ (UIColor *)transparencyPattern; { return [UIColor colorWithPatternImage:UIImage.checkerboard]; }
+@end
